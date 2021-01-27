@@ -1,0 +1,39 @@
+version: '3'
+volumes:
+  tmp_data:
+  public_data:
+services:
+  nginx:
+    build:
+      context: ./
+      dockerfile: ./docker/nginx/Dockerfile
+    ports:
+      - '80:80'
+    volumes:
+      - public_data:/taka_app/public
+      - tmp_data:/taka_app/tmp/sockets
+    depends_on:
+      - app
+    links:
+      - app
+  app:
+    build:
+      context: ./
+      dockerfile: ./docker/rails/Dockerfile
+    command: bundle exec puma
+    volumes:
+      - .:/taka_app:cached
+      - tmp_data:/taka_app/tmp/sockets
+      - public_data:/taka_app/public
+    tty: true
+    stdin_open: true
+  db:
+    image: postgres:12.3
+    ports:
+      - "5432"
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ./tmp/db:/var/lib/postgresql/data
